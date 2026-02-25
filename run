@@ -1,0 +1,27 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+my $self_title = "run";
+
+die "Usage: $self_title <file>\n" unless @ARGV == 1;
+
+my $src = $ARGV[0];
+die "[$self_title] Error: '$src' not found.\n" unless -e $src;
+
+(my $ext = $src) =~ s/.*\.//;
+(my $exe = $src) =~ s/\.[^.]+$//;
+
+my %commands = (
+    py  => "python3 $src",
+    c   => "gcc -std=c11 -Wall -Wextra $src -o $exe && ./$exe && rm $exe",
+    cpp => "g++ -std=c++23 -Wall -Wextra $src -o $exe && ./$exe && rm $exe",
+    rs  => "rustc -W warnings $src -o $exe && ./$exe && rm $exe",
+);
+
+unless (exists $commands{$ext}) {
+    my $supported = join(", ", map { ".$_" } sort keys %commands);
+    die "[$self_title] Error: Unsupported extension '.$ext'. Supported: $supported\n";
+}
+
+system($commands{$ext});

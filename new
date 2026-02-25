@@ -1,0 +1,62 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use lib 'local/lib/perl5';
+use Mojo::UserAgent;
+use Mojo::DOM;
+use FindBin qw($RealBin);
+
+my $self_title = "new";
+
+die "Usage: $self_title <url> <ext>\n" unless @ARGV == 2;
+
+my ($url, $ext) = @ARGV;
+
+my %valid_exts = map { $_ => 1 } qw(c cpp py rs);
+unless (exists $valid_exts{$ext}) {
+    my $supported = join(", ", sort keys %valid_exts);
+    die "[$self_title] Error: Unsupported extension '$ext'. Supported: $supported\n";
+}
+
+my ($problem_num, $problem_letter) = $url =~ m{/problem/(\d+)/([A-Z]\d*)/}
+    or die "[$self_title] Error: Could not parse problem number/letter from URL.\n";
+
+my $ua = Mojo::UserAgent->new;
+$ua->transactor->name('Mozilla/5.0');
+
+my $res = $ua->get($url)->result;
+die "[$self_title] Error: Failed to fetch '$url'.\n" unless $res->is_success;
+
+my $title_el = $res->dom->at('div.title')
+    or die "[$self_title] Error: Could not find problem title on page.\n";
+
+my $title = $title_el->text;
+$title =~ s/^[A-Z]\d*\.\s*//;
+$title = lc $title;
+$title =~ s/ /_/g;
+$title =~ s/[^a-z0-9_]//g;
+
+my $output_path = "src/${problem_num}${problem_letter}_${title}.${ext}";
+
+if (-e $output_path) {
+    print "[$self_title] '$output_path' already exists.\n";
+    exit 0;
+}
+
+my $template_path = "$RealBin/templates/codeforces.$ext";
+open my $fh, '<', $template_path
+    or die "[$self_title] Error: Could not read template '$template_path': $!\n";
+my $content = do { local $/; <$fh> };
+close $fh;
+
+my $comment = ($ext eq 'py') ? '#' : '//';
+$content =~ s{\Q$comment https://codeforces.com/problemset/problem/\E}{$comment $url};
+
+mkdir 'src' unless -d 'src';
+
+open my $out, '>', $output_path
+    or die "[$self_title] Error: Could not write '$output_path': $!\n";
+print $out $content;
+close $out;
+
+print "[$self_title] Created: $output_path\n";

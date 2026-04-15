@@ -18,14 +18,25 @@ unless (exists $valid_exts{$ext}) {
     die "[$self_title] Error: Unsupported extension '$ext'. Supported: $supported\n";
 }
 
-my ($problem_num, $problem_letter) = $url =~ m{/problem/(\d+)/([A-Z]\d*)/}
+my ($problem_num, $problem_letter) = $url =~ m{/problem/(\d+)/([A-Z]\d*)/?}
     or die "[$self_title] Error: Could not parse problem number/letter from URL.\n";
 
 my $ua = Mojo::UserAgent->new;
-$ua->transactor->name('Mozilla/5.0');
+$ua->max_redirects(5);
+$ua->transactor->name(
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+);
 
-my $res = $ua->get($url)->result;
-die "[$self_title] Error: Failed to fetch '$url'.\n" unless $res->is_success;
+my $tx = $ua->get($url => {
+    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language' => 'en-US,en;q=0.5',
+    'DNT'             => '1',
+    'Connection'      => 'keep-alive',
+    'Upgrade-Insecure-Requests' => '1',
+});
+my $res = $tx->result;
+die "[$self_title] Error: Failed to fetch '$url' (HTTP " . $res->code . ").\n"
+    unless $res->is_success;
 
 my $title_el = $res->dom->at('div.title')
     or die "[$self_title] Error: Could not find problem title on page.\n";

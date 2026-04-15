@@ -1,9 +1,8 @@
 // https://codeforces.com/problemset/problem/
 
-#include <iostream>
-#include <iomanip>
+#include <bits/stdc++.h>
 
-using std::cout, std::cin, std::endl;
+using namespace std;
 
 void solve()
 {

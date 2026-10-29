@@ -47,7 +47,7 @@ $title = lc $title;
 $title =~ s/ /_/g;
 $title =~ s/[^a-z0-9_]//g;
 
-my $output_path = "src/${problem_num}${problem_letter}_${title}.${ext}";
+my $output_path = "problemset/${problem_num}${problem_letter}_${title}.${ext}";
 
 if (-e $output_path) {
     print "[$self_title] '$output_path' already exists.\n";
@@ -63,7 +63,7 @@ close $fh;
 my $comment = ($ext eq 'py') ? '#' : '//';
 $content =~ s{\Q$comment https://codeforces.com/problemset/problem/\E}{$comment $url};
 
-mkdir 'src' unless -d 'src';
+mkdir 'problemset' unless -d 'problemset';
 
 open my $out, '>', $output_path
     or die "[$self_title] Error: Could not write '$output_path': $!\n";
